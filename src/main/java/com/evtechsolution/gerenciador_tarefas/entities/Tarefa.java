@@ -9,6 +9,7 @@ public class Tarefa {
 	
 	Long id;
 	String titulo;
+	String descricao;
 	Status status;
 	LocalDateTime dataCriacao;
 
@@ -24,11 +25,12 @@ public class Tarefa {
 		this.dataCriacao = dataCriacao;
 	}
 
-	public Long getid() {
+
+	public Long getId() {
 		return id;
 	}
 
-	public void setid(Long id) {
+	public void setId(Long id) {
 		this.id = id;
 	}
 
@@ -38,6 +40,15 @@ public class Tarefa {
 
 	public void setTitulo(String titulo) {
 		this.titulo = titulo;
+	}
+	
+
+	public String getDescricao() {
+		return descricao;
+	}
+
+	public void setDescricao(String descricao) {
+		this.descricao = descricao;
 	}
 
 	public Status getStatus() {
