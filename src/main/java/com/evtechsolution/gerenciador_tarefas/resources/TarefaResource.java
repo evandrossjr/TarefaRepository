@@ -19,6 +19,7 @@ import com.evtechsolution.gerenciador_tarefas.entities.Tarefa;
 import com.evtechsolution.gerenciador_tarefas.services.TarefaService;
 
 import jakarta.servlet.Servlet;
+import jakarta.validation.Valid;
 import jakarta.websocket.server.PathParam;
 
 import org.springframework.web.bind.annotation.RequestParam;
@@ -45,7 +46,7 @@ public class TarefaResource {
 	}
 	
 	@PostMapping
-	public ResponseEntity<Tarefa> insert(@RequestBody Tarefa obj){
+	public ResponseEntity<Tarefa> insert(@RequestBody @Valid Tarefa obj){
 		obj = tarefaService.insert(obj);
 		URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path(null).buildAndExpand(obj.getId()).toUri();
 		return ResponseEntity.created(uri).body(obj);
@@ -59,7 +60,7 @@ public class TarefaResource {
 	
 	
 	@PutMapping(value = "/{id}")
-	public ResponseEntity<Tarefa> udpate(@PathVariable Long id, @RequestBody Tarefa obj){
+	public ResponseEntity<Tarefa> udpate(@PathVariable Long id, @RequestBody @Valid Tarefa obj){
 		obj = tarefaService.update(id, obj);
 		return ResponseEntity.ok().body(obj);
 	}

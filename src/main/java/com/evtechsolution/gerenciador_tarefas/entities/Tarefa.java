@@ -9,6 +9,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 
 @Entity
@@ -17,9 +19,16 @@ public class Tarefa {
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	Long id;
+	
+	@NotBlank(message ="Coloque um título")
 	String titulo;
+	
 	String descricao;
+	
+	
 	Status status;
+	
+	@NotNull
 	LocalDateTime dataCriacao;
 
 	public Tarefa() {
