@@ -3,6 +3,8 @@ package com.evtechsolution.gerenciador_tarefas.resources;
 import java.net.URI;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,16 +20,14 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import com.evtechsolution.gerenciador_tarefas.entities.Tarefa;
 import com.evtechsolution.gerenciador_tarefas.services.TarefaService;
 
-import jakarta.servlet.Servlet;
 import jakarta.validation.Valid;
-import jakarta.websocket.server.PathParam;
-
-import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
 @RequestMapping(value = "/tarefas")
 public class TarefaResource {
+	
+	 private static final Logger logger = LoggerFactory.getLogger(TarefaResource.class);
 	
 	@Autowired
 	private TarefaService tarefaService;
@@ -55,6 +55,7 @@ public class TarefaResource {
 	@DeleteMapping(value = "/{id}")
 	public ResponseEntity<Void> delete(@PathVariable Long id){
 		tarefaService.delete(id);
+		logger.info("Tarefa com ID {} deletada com sucesso", id);
 		return ResponseEntity.noContent().build();
 	}
 	
