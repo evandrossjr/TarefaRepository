@@ -18,17 +18,17 @@ public class Tarefa {
 	
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-	Long id;
+	private Long id;
 	
 	@NotBlank(message ="Coloque um título")
-	String titulo;
+	private String titulo;
 	
-	String descricao;
+	private String descricao;
 	
-	Status status;
+	private Status status;
 	
 	@NotNull
-	LocalDateTime dataCriacao;
+	private LocalDateTime dataCriacao;
 
 	public Tarefa() {
 		
