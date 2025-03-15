@@ -25,7 +25,6 @@ public class Tarefa {
 	
 	String descricao;
 	
-	
 	Status status;
 	
 	@NotNull
