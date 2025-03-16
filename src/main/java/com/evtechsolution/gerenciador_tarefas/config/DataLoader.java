@@ -23,11 +23,11 @@ public class DataLoader implements CommandLineRunner{
 	
 	@Override
 	public void run(String... args) throws Exception{
-		Tarefa t1 = new Tarefa(null, "Estudar Spring Boot", Status.PENDENTE, LocalDateTime.now());
-        Tarefa t2 = new Tarefa(null, "Criar CRUD de tarefas", Status.EM_ANDAMENTO, LocalDateTime.now());
-        Tarefa t3 = new Tarefa(null, "Testar API", Status.CONCLUIDO, LocalDateTime.now());
+		//Tarefa t1 = new Tarefa(null, "Estudar Spring Boot", Status.PENDENTE, LocalDateTime.now());
+        //Tarefa t2 = new Tarefa(null, "Criar CRUD de tarefas", Status.EM_ANDAMENTO, LocalDateTime.now());
+        //Tarefa t3 = new Tarefa(null, "Testar API", Status.CONCLUIDO, LocalDateTime.now());
         
-        tarefaRepository.saveAll(Arrays.asList(t1, t2, t3));
+        //tarefaRepository.saveAll(Arrays.asList(t1, t2, t3));
         System.out.println("Dados iniciais carregados");
 	
 	}

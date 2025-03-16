@@ -40,7 +40,7 @@ public class UserResource {
 	public ResponseEntity<List<UserDTO>> findAll(){
 		List<User> list = userService.findAll();
 		List<UserDTO> dtoList = list.stream()
-				.map(t -> new UserDTO(t.getId(), t.getName(), t.getName(), t.getPassword()))
+				.map(t -> new UserDTO(t.getId(), t.getName(), t.getEmail(), t.getPassword()))
 				.toList();
 		return ResponseEntity.ok().body(dtoList);
 	}
@@ -75,17 +75,20 @@ public class UserResource {
 	
 	
 	@PutMapping(value = "/{id}")
-	public ResponseEntity<UserDTO> udpate(@PathVariable Long id, @RequestBody @Valid UserDTO dto){
-		User obj = new User();
-	    obj.setId(id);
+	public ResponseEntity<UserDTO> update(@PathVariable Long id, @RequestBody @Valid UserDTO dto){
+	    User obj = userService.findById(id);
+	    if (obj == null) {
+	        return ResponseEntity.notFound().build();
+	    }
+	    
 	    obj.setName(dto.name());
 	    obj.setEmail(dto.email());
 	    obj.setPassword(dto.password());
-		
-		obj = userService.update(id, obj);
-		return ResponseEntity.ok()
-				.body(new UserDTO(obj.getId(), obj.getName(), obj.getPassword(), obj.getPassword()));
+	    
+	    obj = userService.update(id, obj);
+	    return ResponseEntity.ok().body(new UserDTO(obj.getId(), obj.getName(), obj.getEmail(), obj.getPassword()));
 	}
+
 
 	
 

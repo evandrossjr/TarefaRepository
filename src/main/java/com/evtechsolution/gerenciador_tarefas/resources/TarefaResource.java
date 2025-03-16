@@ -20,7 +20,9 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.evtechsolution.gerenciador_tarefas.dtos.TarefaDTO;
 import com.evtechsolution.gerenciador_tarefas.entities.Tarefa;
+import com.evtechsolution.gerenciador_tarefas.entities.User;
 import com.evtechsolution.gerenciador_tarefas.services.TarefaService;
+import com.evtechsolution.gerenciador_tarefas.services.UserService;
 
 import jakarta.validation.Valid;
 
@@ -34,11 +36,14 @@ public class TarefaResource {
 	@Autowired
 	private TarefaService tarefaService;
 	
+	@Autowired
+	private UserService userService;
+	
 	@GetMapping
 	public ResponseEntity<List<TarefaDTO>> findAll(){
 		List<Tarefa> list = tarefaService.findAll();
 		List<TarefaDTO> dtoList = list.stream()
-				.map(t -> new TarefaDTO(t.getId(), t.getTitulo(), t.getDescricao(), t.getStatus(), t.getDataCriacao()))
+				.map(t -> new TarefaDTO(t.getId(), t.getTitulo(), t.getDescricao(), t.getStatus(), t.getDataCriacao(),t.getUser().getId()))
 				.toList();
 		return ResponseEntity.ok().body(dtoList);
 	}
@@ -47,22 +52,29 @@ public class TarefaResource {
 	@GetMapping(value = "/{id}")
 	public ResponseEntity<TarefaDTO> findById(@PathVariable Long id){
 		Tarefa obj = tarefaService.findById(id);
-		TarefaDTO dto = new TarefaDTO(obj.getId(), obj.getTitulo(), obj.getDescricao(), obj.getStatus(), obj.getDataCriacao());
+		TarefaDTO dto = new TarefaDTO(obj.getId(), obj.getTitulo(), obj.getDescricao(), obj.getStatus(), obj.getDataCriacao(), obj.getUser().getId());
 		return ResponseEntity.ok().body(dto);
 	}
 	
 	@PostMapping
 	public ResponseEntity<TarefaDTO> insert(@RequestBody @Valid TarefaDTO dto){
+		User user = userService.findById(dto.userId());
+		if (user == null) {
+			return ResponseEntity.badRequest().body(null);
+		}
+		
 		Tarefa obj = new Tarefa();
 		obj.setTitulo(dto.titulo());
 		obj.setDescricao(dto.descricao());
 		obj.setStatus(dto.status());
 		obj.setDataCriacao(dto.dataCriacao() != null ? dto.dataCriacao() : LocalDateTime.now());
 		
+		obj.setUser(user);
+		
 		obj = tarefaService.insert(obj);
 		
 		URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(obj.getId()).toUri();
-		return ResponseEntity.created(uri).body(new TarefaDTO(obj.getId(), obj.getTitulo(), obj.getDescricao(), obj.getStatus(), obj.getDataCriacao()));
+		return ResponseEntity.created(uri).body(new TarefaDTO(obj.getId(), obj.getTitulo(), obj.getDescricao(), obj.getStatus(), obj.getDataCriacao(), obj.getUser().getId()));
 	}
 	
 	@DeleteMapping(value = "/{id}")
@@ -75,16 +87,28 @@ public class TarefaResource {
 	
 	@PutMapping(value = "/{id}")
 	public ResponseEntity<TarefaDTO> udpate(@PathVariable Long id, @RequestBody @Valid TarefaDTO dto){
-		Tarefa obj = new Tarefa();
+		Tarefa obj = tarefaService.findById(id);
+		
+		if (obj == null) {
+			return ResponseEntity.notFound().build();
+		}
 	    obj.setId(id);
 	    obj.setTitulo(dto.titulo());
 	    obj.setDescricao(dto.descricao());
 	    obj.setStatus(dto.status());
-	    obj.setDataCriacao(dto.dataCriacao());
+	    obj.setDataCriacao(dto.dataCriacao() != null ? dto.dataCriacao() : obj.getDataCriacao());
+	    
+	    if (dto.userId() != null && (obj.getUser() == null || !obj.getUser().getId().equals(dto.userId()))) {
+	        User user = userService.findById(dto.userId());
+	        if (user == null) {
+	            return ResponseEntity.badRequest().body(null); // Retorna erro se o usuário não existir
+	        }
+	        obj.setUser(user);
+	    }
 		
 		obj = tarefaService.update(id, obj);
 		return ResponseEntity.ok()
-				.body(new TarefaDTO(obj.getId(), obj.getTitulo(), obj.getDescricao(), obj.getStatus(), obj.getDataCriacao()));
+				.body(new TarefaDTO(obj.getId(), obj.getTitulo(), obj.getDescricao(), obj.getStatus(), obj.getDataCriacao(), obj.getUser().getId()));
 	}
 
 	

@@ -1,6 +1,7 @@
 package com.evtechsolution.gerenciador_tarefas.entities;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 
 import com.evtechsolution.gerenciador_tarefas.entities.enums.Status;
@@ -9,6 +10,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -29,17 +32,23 @@ public class Tarefa {
 	
 	@NotNull
 	private LocalDateTime dataCriacao;
+	
+	
+	@ManyToOne
+	@JoinColumn(name = "user_id", nullable = false)
+	private User user;
 
 	public Tarefa() {
 		
 	}
 
-	public Tarefa(Long id, String titulo, Status status, LocalDateTime dataCriacao) {
+	public Tarefa(Long id, String titulo, Status status, LocalDateTime dataCriacao, User user) {
 		super();
 		this.id = id;
 		this.titulo = titulo;
 		this.status = status;
 		this.dataCriacao = dataCriacao;
+		this.user= user;
 	}
 
 
@@ -82,6 +91,16 @@ public class Tarefa {
 
 	public void setDataCriacao(LocalDateTime dataCriacao) {
 		this.dataCriacao = dataCriacao;
+	}
+	
+	
+
+	public User getUser() {
+		return user;
+	}
+
+	public void setUser(User user) {
+		this.user = user;
 	}
 
 	@Override
