@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,7 +15,6 @@ import com.evtechsolution.gerenciador_tarefas.entities.Tarefa;
 import com.evtechsolution.gerenciador_tarefas.entities.User;
 import com.evtechsolution.gerenciador_tarefas.exceptions.DatabaseException;
 import com.evtechsolution.gerenciador_tarefas.exceptions.ResourceNotFoundException;
-import com.evtechsolution.gerenciador_tarefas.repositories.TarefaRepository;
 import com.evtechsolution.gerenciador_tarefas.repositories.UserRepository;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -28,7 +27,16 @@ public class UserService {
 	@Autowired
 	private UserRepository userRepository;
 
+		
 	private static final Logger logger = LoggerFactory.getLogger(Tarefa.class);
+	
+	@Autowired
+    private PasswordEncoder passwordEncoder;
+
+    public void salvarUsuario(User user) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        userRepository.save(user);
+    }
 
     @Transactional(readOnly = true)
 	public List<User> findAll(){

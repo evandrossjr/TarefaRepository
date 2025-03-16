@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,6 +36,9 @@ public class UserResource {
 	@Autowired
 	private UserService userService;
 	
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+	
 	@GetMapping
 	public ResponseEntity<List<UserDTO>> findAll(){
 		List<User> list = userService.findAll();
@@ -45,7 +50,7 @@ public class UserResource {
 		                    t.getStatus(), t.getDataCriacao(), t.getUser().getId()
 		                )).toList();
 
-		            return new UserDTO(user.getId(), user.getName(), user.getEmail(), user.getPassword(), tarefasDTO);
+		            return new UserDTO(user.getId(), user.getName(), user.getEmail(), user.getPassword(), user.getRole(), tarefasDTO);
 		        }).toList();
 		    
 		    return ResponseEntity.ok().body(dtoList);
@@ -59,10 +64,10 @@ public class UserResource {
 		List<TarefaDTO> tarefasDTO = obj.getTarefasList().stream()
 		        .map(t -> new TarefaDTO(
 		            t.getId(), t.getTitulo(), t.getDescricao(), 
-		            t.getStatus(), t.getDataCriacao(), t.getUser().getId()
+		            t.getStatus(), t.getDataCriacao(), t.getUser().getId() 
 		        )).toList();
 		
-		UserDTO dto = new UserDTO(obj.getId(), obj.getName(),obj.getEmail(), obj.getPassword(), tarefasDTO);
+		UserDTO dto = new UserDTO(obj.getId(), obj.getName(),obj.getEmail(), obj.getPassword(), obj.getRole(), tarefasDTO);
 		return ResponseEntity.ok().body(dto);
 	}
 	
@@ -71,12 +76,13 @@ public class UserResource {
 		User obj = new User();
 		obj.setName(dto.name());
 		obj.setEmail(dto.email());
-		obj.setPassword(dto.password());
+		obj.setPassword(new BCryptPasswordEncoder().encode(dto.password()));
+		obj.setRole(dto.role());
 		
 		obj = userService.insert(obj);
 		
 		URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(obj.getId()).toUri();
-		return ResponseEntity.created(uri).body(new UserDTO(obj.getId(), obj.getName(), obj.getPassword(), obj.getPassword()));
+		return ResponseEntity.created(uri).body(new UserDTO(obj.getId(), obj.getName(), obj.getPassword(), obj.getPassword(), obj.getRole()));
 	}
 	
 	@DeleteMapping(value = "/{id}")
@@ -96,10 +102,11 @@ public class UserResource {
 	    
 	    obj.setName(dto.name());
 	    obj.setEmail(dto.email());
-	    obj.setPassword(dto.password());
+	    obj.setPassword(new BCryptPasswordEncoder().encode(dto.password()));
+	    obj.setRole(dto.role());
 	    
 	    obj = userService.update(id, obj);
-	    return ResponseEntity.ok().body(new UserDTO(obj.getId(), obj.getName(), obj.getEmail(), obj.getPassword()));
+	    return ResponseEntity.ok().body(new UserDTO(obj.getId(), obj.getName(), obj.getEmail(), obj.getPassword(), obj.getRole()));
 	}
 
 

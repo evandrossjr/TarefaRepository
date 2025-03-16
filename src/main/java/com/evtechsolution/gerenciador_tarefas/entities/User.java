@@ -1,10 +1,17 @@
 package com.evtechsolution.gerenciador_tarefas.entities;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
-import jakarta.persistence.CascadeType;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -15,8 +22,9 @@ import jakarta.validation.constraints.NotBlank;
 
 
 @Entity
-public class User {
-	
+public class User implements UserDetails {
+	private static final long serialVersionUID = 1L;
+
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -25,6 +33,7 @@ public class User {
 	private String name;
 	
 	@NotBlank
+	@Column(unique = true)
 	private String email;
 	
 	@NotBlank
@@ -32,6 +41,45 @@ public class User {
 	
 	@OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
 	private List<Tarefa> tarefasList = new ArrayList<>();
+	
+	@NotBlank
+	@JsonProperty("role")
+	private String role;
+	
+	
+	@Override
+	public Collection<? extends GrantedAuthority> getAuthorities() {
+	    return List.of(new SimpleGrantedAuthority(role));
+	}
+
+	
+
+	@Override
+	public String getUsername() {
+	    return email;
+	}
+
+	@Override
+	public boolean isAccountNonExpired() {
+	    return true;
+	}
+
+	@Override
+	public boolean isAccountNonLocked() {
+	    return true;
+	}
+
+	@Override
+	public boolean isCredentialsNonExpired() {
+	    return true;
+	}
+
+	@Override
+	public boolean isEnabled() {
+	    return true;
+	}
+
+	
 	
 	public User() {
 		
@@ -69,8 +117,9 @@ public class User {
 		this.email = email;
 	}
 
+	@Override
 	public String getPassword() {
-		return password;
+	    return password;
 	}
 
 	public void setPassword(String password) {
@@ -84,6 +133,21 @@ public class User {
 	public void setTarefasList(List<Tarefa> tarefasList) {
 		this.tarefasList = tarefasList;
 	}
+
+	
+	
+	
+	public String getRole() {
+		return role;
+	}
+
+
+
+	public void setRole(String role) {
+		this.role = role;
+	}
+
+
 
 	@Override
 	public int hashCode() {
@@ -101,7 +165,8 @@ public class User {
 		User other = (User) obj;
 		return Objects.equals(email, other.email) && Objects.equals(id, other.id);
 	}
-	
+
+
 	
 	
 	
