@@ -1,7 +1,6 @@
 package com.evtechsolution.gerenciador_tarefas.resources;
 
 import java.net.URI;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -20,7 +19,6 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.evtechsolution.gerenciador_tarefas.dtos.TarefaDTO;
 import com.evtechsolution.gerenciador_tarefas.dtos.UserDTO;
-import com.evtechsolution.gerenciador_tarefas.entities.Tarefa;
 import com.evtechsolution.gerenciador_tarefas.entities.User;
 import com.evtechsolution.gerenciador_tarefas.services.UserService;
 
@@ -40,16 +38,31 @@ public class UserResource {
 	public ResponseEntity<List<UserDTO>> findAll(){
 		List<User> list = userService.findAll();
 		List<UserDTO> dtoList = list.stream()
-				.map(t -> new UserDTO(t.getId(), t.getName(), t.getEmail(), t.getPassword()))
-				.toList();
-		return ResponseEntity.ok().body(dtoList);
+		        .map(user -> {
+		            List<TarefaDTO> tarefasDTO = user.getTarefasList().stream()
+		                .map(t -> new TarefaDTO(
+		                    t.getId(), t.getTitulo(), t.getDescricao(), 
+		                    t.getStatus(), t.getDataCriacao(), t.getUser().getId()
+		                )).toList();
+
+		            return new UserDTO(user.getId(), user.getName(), user.getEmail(), user.getPassword(), tarefasDTO);
+		        }).toList();
+		    
+		    return ResponseEntity.ok().body(dtoList);
 	}
 	
 	
 	@GetMapping(value = "/{id}")
 	public ResponseEntity<UserDTO> findById(@PathVariable Long id){
 		User obj = userService.findById(id);
-		UserDTO dto = new UserDTO(obj.getId(), obj.getName(), obj.getPassword(), obj.getPassword());
+		
+		List<TarefaDTO> tarefasDTO = obj.getTarefasList().stream()
+		        .map(t -> new TarefaDTO(
+		            t.getId(), t.getTitulo(), t.getDescricao(), 
+		            t.getStatus(), t.getDataCriacao(), t.getUser().getId()
+		        )).toList();
+		
+		UserDTO dto = new UserDTO(obj.getId(), obj.getName(),obj.getEmail(), obj.getPassword(), tarefasDTO);
 		return ResponseEntity.ok().body(dto);
 	}
 	

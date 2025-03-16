@@ -30,7 +30,7 @@ public class UserService {
 
 	private static final Logger logger = LoggerFactory.getLogger(Tarefa.class);
 
-	
+    @Transactional(readOnly = true)
 	public List<User> findAll(){
 		return userRepository.findAll();
 	}
