@@ -1,6 +1,5 @@
 package com.evtechsolution.gerenciador_tarefas.security;
 
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -12,7 +11,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import com.evtechsolution.gerenciador_tarefas.security.jwt.JwtFilter;
 
 @EnableWebSecurity
-public class SecurityConfig {
+public class WebSecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -25,6 +24,7 @@ public class SecurityConfig {
 
         return http.build();
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {
