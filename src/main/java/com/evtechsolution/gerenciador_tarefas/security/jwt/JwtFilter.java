@@ -1,14 +1,26 @@
 package com.evtechsolution.gerenciador_tarefas.security.jwt;
 
+import java.io.IOException;
+
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import io.jsonwebtoken.io.IOException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public class JwtFilter extends OncePerRequestFilter {
+
+    private final UserDetailsService userDetailsService;
+
+    public JwtFilter(UserDetailsService userDetailsService) {
+        this.userDetailsService = userDetailsService;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -19,13 +31,22 @@ public class JwtFilter extends OncePerRequestFilter {
             token = token.substring(7);
             try {
                 String username = JwtUtil.validateToken(token);
-                // Aqui você pode adicionar o usuário no contexto de segurança, se necessário
+
+                // Verifica se o usuário existe e adiciona ao contexto de segurança
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+
             } catch (RuntimeException e) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido ou expirado");
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("Token inválido ou expirado");
                 return;
             }
         } else {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token não fornecido");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Token não fornecido");
             return;
         }
 
