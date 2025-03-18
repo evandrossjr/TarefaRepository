@@ -2,6 +2,7 @@ package com.evtechsolution.gerenciador_tarefas.entities;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -49,8 +50,7 @@ public class User implements UserDetails {
 	
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
-	    return List.of(new SimpleGrantedAuthority(role));
-	}
+		return Collections.singletonList(new SimpleGrantedAuthority(role));	}
 
 	
 
@@ -85,12 +85,13 @@ public class User implements UserDetails {
 		
 	}
 	
-	public User(Long id, String name, String email, String password) {
+	public User(Long id, String name, String email, String password, String role) {
 		super();
 		this.id = id;
 		this.name = name;
 		this.email = email;
 		this.password = password;
+		this.role = role;
 	}
 
 	public Long getId() {

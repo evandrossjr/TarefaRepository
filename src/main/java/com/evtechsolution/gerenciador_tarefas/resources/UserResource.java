@@ -39,6 +39,9 @@ public class UserResource {
 	@Autowired
 	private PasswordEncoder passwordEncoder;
 	
+	
+	
+	
 	@GetMapping
 	public ResponseEntity<List<UserDTO>> findAll(){
 		List<User> list = userService.findAll();

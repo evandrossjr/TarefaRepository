@@ -1,10 +1,10 @@
 package com.evtechsolution.gerenciador_tarefas.entities;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Objects;
 
 import com.evtechsolution.gerenciador_tarefas.entities.enums.Status;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
