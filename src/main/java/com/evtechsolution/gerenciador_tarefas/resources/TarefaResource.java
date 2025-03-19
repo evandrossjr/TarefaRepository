@@ -1,12 +1,9 @@
 package com.evtechsolution.gerenciador_tarefas.resources;
 
-import java.net.URI;
-import java.time.LocalDateTime;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,103 +11,82 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.evtechsolution.gerenciador_tarefas.dtos.TarefaDTO;
 import com.evtechsolution.gerenciador_tarefas.entities.Tarefa;
 import com.evtechsolution.gerenciador_tarefas.entities.User;
-import com.evtechsolution.gerenciador_tarefas.services.TarefaService;
-import com.evtechsolution.gerenciador_tarefas.services.UserService;
+import com.evtechsolution.gerenciador_tarefas.infra.security.TokenService;
+import com.evtechsolution.gerenciador_tarefas.repositories.TarefaRepository;
+import com.evtechsolution.gerenciador_tarefas.repositories.UserRepository;
 
-import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 
 @RestController
-@RequestMapping(value = "/tarefas")
+@RequestMapping("/tarefas")
 public class TarefaResource {
-	
-	 private static final Logger logger = LoggerFactory.getLogger(TarefaResource.class);
+
+	@Autowired
+    private  TarefaRepository tarefaRepository;
 	
 	@Autowired
-	private TarefaService tarefaService;
+    private  UserRepository userRepository;
 	
 	@Autowired
-	private UserService userService;
-	
-	@GetMapping
-	public ResponseEntity<List<TarefaDTO>> findAll(){
-		List<Tarefa> list = tarefaService.findAll();
-		List<TarefaDTO> dtoList = list.stream()
-				.map(t -> new TarefaDTO(t.getId(), t.getTitulo(), t.getDescricao(), t.getStatus(), t.getDataCriacao(),t.getUser().getId()))
-				.toList();
-		return ResponseEntity.ok().body(dtoList);
-	}
-	
-	
-	@GetMapping(value = "/{id}")
-	public ResponseEntity<TarefaDTO> findById(@PathVariable Long id){
-		Tarefa obj = tarefaService.findById(id);
-		TarefaDTO dto = new TarefaDTO(obj.getId(), obj.getTitulo(), obj.getDescricao(), obj.getStatus(), obj.getDataCriacao(), obj.getUser().getId());
-		return ResponseEntity.ok().body(dto);
-	}
-	
-	@PostMapping
-	public ResponseEntity<TarefaDTO> insert(@RequestBody @Valid TarefaDTO dto){
-		User user = userService.findById(dto.userId());
-		if (user == null) {
-			return ResponseEntity.badRequest().body(null);
-		}
-		
-		Tarefa obj = new Tarefa();
-		obj.setTitulo(dto.titulo());
-		obj.setDescricao(dto.descricao());
-		obj.setStatus(dto.status());
-		obj.setDataCriacao(dto.dataCriacao() != null ? dto.dataCriacao() : LocalDateTime.now());
-		
-		obj.setUser(user);
-		
-		obj = tarefaService.insert(obj);
-		
-		URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(obj.getId()).toUri();
-		return ResponseEntity.created(uri).body(new TarefaDTO(obj.getId(), obj.getTitulo(), obj.getDescricao(), obj.getStatus(), obj.getDataCriacao(), obj.getUser().getId()));
-	}
-	
-	@DeleteMapping(value = "/{id}")
-	public ResponseEntity<Void> delete(@PathVariable Long id){
-		tarefaService.delete(id);
-		logger.info("Tarefa com ID {} deletada com sucesso", id);
-		return ResponseEntity.noContent().build();
-	}
-	
-	
-	@PutMapping(value = "/{id}")
-	public ResponseEntity<TarefaDTO> udpate(@PathVariable Long id, @RequestBody @Valid TarefaDTO dto){
-		Tarefa obj = tarefaService.findById(id);
-		
-		if (obj == null) {
-			return ResponseEntity.notFound().build();
-		}
-	    obj.setId(id);
-	    obj.setTitulo(dto.titulo());
-	    obj.setDescricao(dto.descricao());
-	    obj.setStatus(dto.status());
-	    obj.setDataCriacao(dto.dataCriacao() != null ? dto.dataCriacao() : obj.getDataCriacao());
-	    
-	    if (dto.userId() != null && (obj.getUser() == null || !obj.getUser().getId().equals(dto.userId()))) {
-	        User user = userService.findById(dto.userId());
-	        if (user == null) {
-	            return ResponseEntity.badRequest().body(null); // Retorna erro se o usuário não existir
-	        }
-	        obj.setUser(user);
-	    }
-		
-		obj = tarefaService.update(id, obj);
-		return ResponseEntity.ok()
-				.body(new TarefaDTO(obj.getId(), obj.getTitulo(), obj.getDescricao(), obj.getStatus(), obj.getDataCriacao(), obj.getUser().getId()));
-	}
+    private  TokenService tokenService;
 
-	
+    private User getAuthenticatedUser(String token) {
+        String email = tokenService.extractUsername(token.replace("Bearer ", ""));
+        return userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+    }
 
+    @GetMapping
+    public ResponseEntity<List<Tarefa>> listarTarefas(@RequestHeader("Authorization") String token) {
+        User user = getAuthenticatedUser(token);
+        
+        if (user.getRole().equals("ADMIN")) {
+            return ResponseEntity.ok(tarefaRepository.findAll()); // ADMIN vê tudo
+        } else {
+            return ResponseEntity.ok(tarefaRepository.findByUserId(user.getId())); // USER vê só as próprias tarefas
+        }
+    }
+
+    @PostMapping
+    public ResponseEntity<Tarefa> criarTarefa(@RequestHeader("Authorization") String token, @RequestBody Tarefa tarefa) {
+        User user = getAuthenticatedUser(token);
+        tarefa.setUser(user); // Garante que a tarefa pertence ao usuário autenticado
+        return ResponseEntity.ok(tarefaRepository.save(tarefa));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Tarefa> atualizarTarefa(@RequestHeader("Authorization") String token, @PathVariable Long id, @RequestBody Tarefa tarefaAtualizada) {
+        User user = getAuthenticatedUser(token);
+        Tarefa tarefa = tarefaRepository.findById(id).orElseThrow(() -> new RuntimeException("Tarefa não encontrada"));
+
+        if (user.getRole().equals("ADMIN") || tarefa.getUser().getId().equals(user.getId())) {
+            tarefa.setTitulo(tarefaAtualizada.getTitulo());
+            tarefa.setDescricao(tarefaAtualizada.getDescricao());
+            return ResponseEntity.ok(tarefaRepository.save(tarefa));
+        }
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // Bloqueia alteração se não for dono
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletarTarefa(@RequestHeader("Authorization") String token, @PathVariable Long id) {
+        User user = getAuthenticatedUser(token);
+        Tarefa tarefa = tarefaRepository.findById(id).orElseThrow(() -> new RuntimeException("Tarefa não encontrada"));
+
+        if (user.getRole().equals("ADMIN") || tarefa.getUser().getId().equals(user.getId())) {
+            tarefaRepository.delete(tarefa);
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // Bloqueia exclusão se não for dono
+    }
+    
+   
+    
 }

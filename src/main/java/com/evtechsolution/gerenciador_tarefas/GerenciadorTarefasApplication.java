@@ -24,6 +24,10 @@ public class GerenciadorTarefasApplication {
         System.out.println("Database Username: " + environment.getProperty("spring.datasource.username"));
         
         System.out.println(new BCryptPasswordEncoder().encode("adminpassword"));
+       
+        
+        
+        
 	} 
 	
 

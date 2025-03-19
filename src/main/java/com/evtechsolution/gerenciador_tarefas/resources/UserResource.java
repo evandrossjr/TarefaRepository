@@ -6,6 +6,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -22,6 +24,8 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import com.evtechsolution.gerenciador_tarefas.dtos.TarefaDTO;
 import com.evtechsolution.gerenciador_tarefas.dtos.UserDTO;
 import com.evtechsolution.gerenciador_tarefas.entities.User;
+import com.evtechsolution.gerenciador_tarefas.infra.security.TokenService;
+import com.evtechsolution.gerenciador_tarefas.repositories.UserRepository;
 import com.evtechsolution.gerenciador_tarefas.services.UserService;
 
 import jakarta.validation.Valid;
@@ -39,8 +43,16 @@ public class UserResource {
 	@Autowired
 	private PasswordEncoder passwordEncoder;
 	
+	@Autowired
+	private UserRepository userRepository;
 	
+	@Autowired
+    private  TokenService tokenService;
 	
+	private User getAuthenticatedUser(String token) {
+        String email = tokenService.extractUsername(token.replace("Bearer ", ""));
+        return userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+    }
 	
 	@GetMapping
 	public ResponseEntity<List<UserDTO>> findAll(){
@@ -96,23 +108,24 @@ public class UserResource {
 	}
 	
 	
-	@PutMapping(value = "/{id}")
-	public ResponseEntity<UserDTO> update(@PathVariable Long id, @RequestBody @Valid UserDTO dto){
-	    User obj = userService.findById(id);
-	    if (obj == null) {
-	        return ResponseEntity.notFound().build();
+	
+
+
+	 @PutMapping("/{id}")
+	    public ResponseEntity<User> atualizarUsuario(@RequestHeader("Authorization") String token, @PathVariable Long id, @RequestBody User userAtualizado) {
+	        User authUser = getAuthenticatedUser(token);
+	        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+	        // Se o usuário autenticado não for ADMIN, ele não pode mudar a role
+	        if (!authUser.getRole().equals("ADMIN") && !user.getId().equals(authUser.getId())) {
+	            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+	        }
+
+	        user.setName(userAtualizado.getName());
+	        user.setEmail(userAtualizado.getEmail());
+
+	        return ResponseEntity.ok(userRepository.save(user));
 	    }
-	    
-	    obj.setName(dto.name());
-	    obj.setEmail(dto.email());
-	    obj.setPassword(new BCryptPasswordEncoder().encode(dto.password()));
-	    obj.setRole(dto.role());
-	    
-	    obj = userService.update(id, obj);
-	    return ResponseEntity.ok().body(new UserDTO(obj.getId(), obj.getName(), obj.getEmail(), obj.getPassword(), obj.getRole()));
-	}
-
-
 	
 
 }
