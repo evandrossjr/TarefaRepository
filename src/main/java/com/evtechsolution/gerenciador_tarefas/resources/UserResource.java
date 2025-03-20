@@ -32,100 +32,39 @@ import jakarta.validation.Valid;
 
 
 @RestController
-@RequestMapping(value = "/users")
-public class UserResource {
-	
-	 private static final Logger logger = LoggerFactory.getLogger(UserResource.class);
-	
-	@Autowired
-	private UserService userService;
-	
-	@Autowired
-	private PasswordEncoder passwordEncoder;
-	
-	@Autowired
-	private UserRepository userRepository;
-	
-	@Autowired
-    private  TokenService tokenService;
-	
-	private User getAuthenticatedUser(String token) {
-        String email = tokenService.extractUsername(token.replace("Bearer ", ""));
-        return userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+@RequestMapping("/users")
+public class UserController {
+
+    @Autowired
+    private UserService userService;
+
+    // ADMIN - Listar todos os usuários
+    @GetMapping
+    public ResponseEntity<List<User>> findAll(Authentication authentication) {
+        if (!userService.isAdmin(authentication.getName())) {
+            return ResponseEntity.status(403).build();
+        }
+        return ResponseEntity.ok(userService.findAll());
     }
-	
-	@GetMapping
-	public ResponseEntity<List<UserDTO>> findAll(){
-		List<User> list = userService.findAll();
-		List<UserDTO> dtoList = list.stream()
-		        .map(user -> {
-		            List<TarefaDTO> tarefasDTO = user.getTarefasList().stream()
-		                .map(t -> new TarefaDTO(
-		                    t.getId(), t.getTitulo(), t.getDescricao(), 
-		                    t.getStatus(), t.getDataCriacao(), t.getUser().getId()
-		                )).toList();
 
-		            return new UserDTO(user.getId(), user.getName(), user.getEmail(), user.getPassword(), user.getRole(), tarefasDTO);
-		        }).toList();
-		    
-		    return ResponseEntity.ok().body(dtoList);
-	}
-	
-	
-	@GetMapping(value = "/{id}")
-	public ResponseEntity<UserDTO> findById(@PathVariable Long id){
-		User obj = userService.findById(id);
-		
-		List<TarefaDTO> tarefasDTO = obj.getTarefasList().stream()
-		        .map(t -> new TarefaDTO(
-		            t.getId(), t.getTitulo(), t.getDescricao(), 
-		            t.getStatus(), t.getDataCriacao(), t.getUser().getId() 
-		        )).toList();
-		
-		UserDTO dto = new UserDTO(obj.getId(), obj.getName(),obj.getEmail(), obj.getPassword(), obj.getRole(), tarefasDTO);
-		return ResponseEntity.ok().body(dto);
-	}
-	
-	@PostMapping
-	public ResponseEntity<UserDTO> insert(@RequestBody @Valid UserDTO dto){
-		User obj = new User();
-		obj.setName(dto.name());
-		obj.setEmail(dto.email());
-		obj.setPassword(new BCryptPasswordEncoder().encode(dto.password()));
-		obj.setRole(dto.role());
-		
-		obj = userService.insert(obj);
-		
-		URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(obj.getId()).toUri();
-		return ResponseEntity.created(uri).body(new UserDTO(obj.getId(), obj.getName(), obj.getPassword(), obj.getPassword(), obj.getRole()));
-	}
-	
-	@DeleteMapping(value = "/{id}")
-	public ResponseEntity<Void> delete(@PathVariable Long id){
-		userService.delete(id);
-		logger.info("Usuário com ID {} deletada com sucesso", id);
-		return ResponseEntity.noContent().build();
-	}
-	
-	
-	
+    // Usuário pode ver apenas seu próprio usuário
+    @GetMapping("/{id}")
+    public ResponseEntity<User> findById(@PathVariable Long id, Authentication authentication) {
+        User user = userService.findById(id, authentication.getName());
+        return ResponseEntity.ok(user);
+    }
 
+    // Atualizar o próprio usuário
+    @PutMapping("/{id}")
+    public ResponseEntity<User> update(@PathVariable Long id, @RequestBody User user, Authentication authentication) {
+        User updatedUser = userService.update(id, user, authentication.getName());
+        return ResponseEntity.ok(updatedUser);
+    }
 
-	 @PutMapping("/{id}")
-	    public ResponseEntity<User> atualizarUsuario(@RequestHeader("Authorization") String token, @PathVariable Long id, @RequestBody User userAtualizado) {
-	        User authUser = getAuthenticatedUser(token);
-	        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-
-	        // Se o usuário autenticado não for ADMIN, ele não pode mudar a role
-	        if (!authUser.getRole().equals("ADMIN") && !user.getId().equals(authUser.getId())) {
-	            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-	        }
-
-	        user.setName(userAtualizado.getName());
-	        user.setEmail(userAtualizado.getEmail());
-
-	        return ResponseEntity.ok(userRepository.save(user));
-	    }
-	
-
+    // Deletar o próprio usuário
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id, Authentication authentication) {
+        userService.delete(id, authentication.getName());
+        return ResponseEntity.noContent().build();
+    }
 }

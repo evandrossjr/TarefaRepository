@@ -21,7 +21,8 @@ import com.evtechsolution.gerenciador_tarefas.infra.security.TokenService;
 import com.evtechsolution.gerenciador_tarefas.repositories.TarefaRepository;
 import com.evtechsolution.gerenciador_tarefas.repositories.UserRepository;
 
-import lombok.RequiredArgsConstructor;
+
+
 
 
 @RestController

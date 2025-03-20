@@ -30,10 +30,10 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
-                        .requestMatchers("/users/**").permitAll() // Somente ADMIN pode gerenciar usuários
-                        .requestMatchers("/tarefas/**").permitAll() // Ambos podem acessar e modificar tarefas    
+                        .requestMatchers(HttpMethod.POST, "/auth/login","/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/users/{id}").authenticated() // Apenas usuário autenticado acessa seu próprio ID
+                        .requestMatchers(HttpMethod.GET, "/users/**").hasRole("ADMIN") // Somente ADMIN pode acessar todos os usuários
+                        .requestMatchers("/tarefas/**").authenticated() // Ambos podem acessar tarefas
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class);

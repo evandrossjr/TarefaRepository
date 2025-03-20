@@ -1,5 +1,6 @@
 package com.evtechsolution.gerenciador_tarefas.services;
 
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,11 +44,25 @@ public class UserService {
 		return userRepository.findAll();
 	}
 	
-	public User findById(Long id) {
-		Optional<User> obj = userRepository.findById(id);
-		return obj.orElseThrow(()-> new ResourceNotFoundException("Tarefa não encontrada!"));		
-	}
+    @Transactional(readOnly = true)
+    public User findById(Long id, String username) throws AccessDeniedException {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado!"));
+        
+        // Usuário só pode acessar os próprios dados, a não ser que seja ADMIN
+        if (!user.getUsername().equals(username) && !isAdmin(username)) {
+            throw new AccessDeniedException("Acesso negado.");
+        }
+
+        return user;
+    }
 	
+    private boolean isAdmin(String email) {
+        Optional<User> user = userRepository.findByEmail(email);
+        return user != null && user.get().getRole().equals("ADMIN");
+    }
+
+
 	public User insert(User obj) {
 		return userRepository.save(obj);
 	}
@@ -81,20 +96,25 @@ public class UserService {
 
 	
 	@Transactional
-	public User update(Long id, User obj) {
-		try {
-			User entity = userRepository.getReferenceById(id);
-			updateData(entity, obj);
-			return userRepository.save(entity);	
-		} catch (EntityNotFoundException e) {
-			throw new ResourceNotFoundException(id);
-		}	
-	}
+    public User update(Long id, User obj, String username) throws AccessDeniedException {
+        try {
+            User entity = userRepository.getReferenceById(id);
 
+            if (!entity.getUsername().equals(username) && !isAdmin(username)) {
+                throw new AccessDeniedException("Acesso negado.");
+            }
+
+            updateData(entity, obj);
+            return userRepository.save(entity);
+        } catch (EntityNotFoundException e) {
+            throw new ResourceNotFoundException(id);
+        }
+    }
+	
 	private void updateData(User entity, User obj) {
-		entity.setName(obj.getName());
-		entity.setEmail(obj.getEmail());
-		entity.setPassword(obj.getPassword());
-	}
+        entity.setName(obj.getName());
+        entity.setEmail(obj.getEmail());
+        entity.setPassword(passwordEncoder.encode(obj.getPassword()));
+    }
 	
 }
