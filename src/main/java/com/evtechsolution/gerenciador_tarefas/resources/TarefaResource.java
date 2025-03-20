@@ -1,5 +1,7 @@
 package com.evtechsolution.gerenciador_tarefas.resources;
 
+import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,12 +16,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.evtechsolution.gerenciador_tarefas.dtos.TarefaDTO;
 import com.evtechsolution.gerenciador_tarefas.entities.Tarefa;
 import com.evtechsolution.gerenciador_tarefas.entities.User;
 import com.evtechsolution.gerenciador_tarefas.infra.security.TokenService;
 import com.evtechsolution.gerenciador_tarefas.repositories.TarefaRepository;
 import com.evtechsolution.gerenciador_tarefas.repositories.UserRepository;
+import com.evtechsolution.gerenciador_tarefas.services.TarefaService;
+import com.evtechsolution.gerenciador_tarefas.services.UserService;
+
+import jakarta.validation.Valid;
 
 
 
@@ -28,7 +36,13 @@ import com.evtechsolution.gerenciador_tarefas.repositories.UserRepository;
 @RestController
 @RequestMapping("/tarefas")
 public class TarefaResource {
+	
+	@Autowired
+	private TarefaService tarefaService;
 
+	@Autowired
+	private UserService userService;
+	
 	@Autowired
     private  TarefaRepository tarefaRepository;
 	
@@ -44,36 +58,57 @@ public class TarefaResource {
     }
 
     @GetMapping
-    public ResponseEntity<List<Tarefa>> listarTarefas(@RequestHeader("Authorization") String token) {
-        User user = getAuthenticatedUser(token);
-        
-        if (user.getRole().equals("ADMIN")) {
-            return ResponseEntity.ok(tarefaRepository.findAll()); // ADMIN vê tudo
-        } else {
-            return ResponseEntity.ok(tarefaRepository.findByUserId(user.getId())); // USER vê só as próprias tarefas
-        }
-    }
+	public ResponseEntity<List<TarefaDTO>> findAll(){
+		List<Tarefa> list = tarefaService.findAll();
+		List<TarefaDTO> dtoList = list.stream()
+				.map(t -> new TarefaDTO(t.getId(), t.getTitulo(), t.getDescricao(), t.getStatus(), t.getDataCriacao(),t.getUser().getId()))
+				.toList();
+		return ResponseEntity.ok().body(dtoList);
+	}
+    
+    @GetMapping(value = "/{id}")
+	public ResponseEntity<TarefaDTO> findById(@PathVariable Long id){
+		Tarefa obj = tarefaService.findById(id);
+		TarefaDTO dto = new TarefaDTO(obj.getId(), obj.getTitulo(), obj.getDescricao(), obj.getStatus(), obj.getDataCriacao(), obj.getUser().getId());
+		return ResponseEntity.ok().body(dto);
+	}
 
     @PostMapping
-    public ResponseEntity<Tarefa> criarTarefa(@RequestHeader("Authorization") String token, @RequestBody Tarefa tarefa) {
-        User user = getAuthenticatedUser(token);
-        tarefa.setUser(user); // Garante que a tarefa pertence ao usuário autenticado
-        return ResponseEntity.ok(tarefaRepository.save(tarefa));
-    }
+	public ResponseEntity<TarefaDTO> insert(@RequestBody @Valid TarefaDTO dto){
+		User user = userService.findById(dto.userId());
+		if (user == null) {
+			return ResponseEntity.badRequest().body(null);
+		}
+		
+		Tarefa obj = new Tarefa();
+		obj.setTitulo(dto.titulo());
+		obj.setDescricao(dto.descricao());
+		obj.setStatus(dto.status());
+		obj.setDataCriacao(dto.dataCriacao() != null ? dto.dataCriacao() : LocalDateTime.now());
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Tarefa> atualizarTarefa(@RequestHeader("Authorization") String token, @PathVariable Long id, @RequestBody Tarefa tarefaAtualizada) {
-        User user = getAuthenticatedUser(token);
-        Tarefa tarefa = tarefaRepository.findById(id).orElseThrow(() -> new RuntimeException("Tarefa não encontrada"));
+		obj.setUser(user);
+		
+		obj = tarefaService.insert(obj);
 
-        if (user.getRole().equals("ADMIN") || tarefa.getUser().getId().equals(user.getId())) {
-            tarefa.setTitulo(tarefaAtualizada.getTitulo());
-            tarefa.setDescricao(tarefaAtualizada.getDescricao());
-            return ResponseEntity.ok(tarefaRepository.save(tarefa));
-        }
+		URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(obj.getId()).toUri();
+		return ResponseEntity.created(uri).body(new TarefaDTO(obj.getId(), obj.getTitulo(), obj.getDescricao(), obj.getStatus(), obj.getDataCriacao(), obj.getUser().getId()));
+	}
+    
+    
 
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).build(); // Bloqueia alteração se não for dono
-    }
+    @PutMapping(value = "/{id}")
+	public ResponseEntity<TarefaDTO> udpate(@PathVariable Long id, @RequestBody @Valid TarefaDTO dto){
+		Tarefa obj = new Tarefa();
+	    obj.setId(id);
+	    obj.setTitulo(dto.titulo());
+	    obj.setDescricao(dto.descricao());
+	    obj.setStatus(dto.status());
+	    obj.setDataCriacao(dto.dataCriacao());
+		
+		obj = tarefaService.update(id, obj);
+		return ResponseEntity.ok()
+				.body(new TarefaDTO(obj.getId(), obj.getTitulo(), obj.getDescricao(), obj.getStatus(), obj.getDataCriacao()));
+	}
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletarTarefa(@RequestHeader("Authorization") String token, @PathVariable Long id) {
