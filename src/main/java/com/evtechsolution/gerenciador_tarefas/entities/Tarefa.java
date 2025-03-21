@@ -3,8 +3,7 @@ package com.evtechsolution.gerenciador_tarefas.entities;
 import java.time.LocalDateTime;
 
 import com.evtechsolution.gerenciador_tarefas.entities.enums.StatusTarefa;
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -34,7 +33,7 @@ public class Tarefa {
     @Enumerated(EnumType.STRING)
     private StatusTarefa status;
     
-    
+    @JsonIgnoreProperties({"tarefas", "password", "authorities", "accountNonExpired", "accountNonLocked", "credentialsNonExpired", "enabled"})
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
@@ -100,5 +99,18 @@ public class Tarefa {
     
     public void setUser(User user) {
         this.user = user;
+    }
+    
+    @Override
+    public String toString() {
+        return "Tarefa{" +
+                "id=" + id +
+                ", titulo='" + titulo + '\'' +
+                ", descricao='" + descricao + '\'' +
+                ", dataCriacao=" + dataCriacao +
+                ", dataConclusao=" + dataConclusao +
+                ", status=" + status +
+                ", userId=" + (user != null ? user.getId() : null) +
+                '}';
     }
 }

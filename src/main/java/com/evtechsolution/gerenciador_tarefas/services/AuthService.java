@@ -1,5 +1,6 @@
 package com.evtechsolution.gerenciador_tarefas.services;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -21,8 +22,11 @@ public class AuthService {
     private final TokenService tokenService;
     private final PasswordEncoder passwordEncoder;
 
-    public AuthService(AuthenticationManager authenticationManager, UserRepository userRepository, 
-                      TokenService tokenService, PasswordEncoder passwordEncoder) {
+    @Autowired
+    public AuthService(AuthenticationManager authenticationManager, 
+                      UserRepository userRepository, 
+                      TokenService tokenService, 
+                      PasswordEncoder passwordEncoder) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.tokenService = tokenService;
@@ -62,3 +66,4 @@ public class AuthService {
         return (User) userRepository.save(newUser);
     }
 }
+

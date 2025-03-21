@@ -32,13 +32,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/tarefas/**").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/tarefas").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/tarefas/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/tarefas/**").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/users/**").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/users/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/users/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)
@@ -55,4 +48,3 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 }
-

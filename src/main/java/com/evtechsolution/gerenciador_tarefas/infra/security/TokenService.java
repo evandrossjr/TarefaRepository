@@ -23,10 +23,24 @@ public class TokenService {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
             return JWT.create()
-                    .withIssuer("tarefaRepository-api")
+                    .withIssuer("auth-api")
                     .withSubject(user.getUsername())
                     .withClaim("id", user.getId())
-                    .withClaim("role", user.getRole().name())
+                    .withClaim("role", user.getRole().toString())
+                    .withExpiresAt(genExpirationDate())
+                    .sign(algorithm);
+        } catch (JWTCreationException exception) {
+            throw new RuntimeException("Erro ao gerar token", exception);
+        }
+    }
+    
+    // Método simplificado que usa apenas o username
+    public String generateTokenSimple(String username) {
+        try {
+            Algorithm algorithm = Algorithm.HMAC256(secret);
+            return JWT.create()
+                    .withIssuer("auth-api")
+                    .withSubject(username)
                     .withExpiresAt(genExpirationDate())
                     .sign(algorithm);
         } catch (JWTCreationException exception) {
@@ -38,11 +52,11 @@ public class TokenService {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
             return JWT.require(algorithm)
-                    .withIssuer("tarefaRepository-api")
+                    .withIssuer("auth-api")
                     .build()
                     .verify(token)
                     .getSubject();
-        } catch (JWTVerificationException exception) {
+        } catch (Exception e) {
             return null;
         }
     }

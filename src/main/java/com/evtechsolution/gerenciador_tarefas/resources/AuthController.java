@@ -1,6 +1,7 @@
 package com.evtechsolution.gerenciador_tarefas.resources;
 
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,6 +22,7 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @Autowired
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
@@ -32,8 +34,12 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<User> register(@RequestBody RegisterDTO data) {
-        User user = authService.register(data);
-        return ResponseEntity.ok(user);
+    public ResponseEntity<Object> register(@RequestBody RegisterDTO data) {
+        try {
+            User user = authService.register(data);
+            return ResponseEntity.ok().body(user);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }
