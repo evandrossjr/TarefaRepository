@@ -9,7 +9,6 @@ import com.evtechsolution.gerenciador_tarefas.entities.Tarefa;
 import com.evtechsolution.gerenciador_tarefas.entities.User;
 
 @Repository
-public interface TarefaRepository extends JpaRepository<Tarefa, Long>{
-	List<Tarefa> findByUser(User user);
-
+public interface TarefaRepository extends JpaRepository<Tarefa, Long> {
+    List<Tarefa> findByUserId(Long userId);
 }

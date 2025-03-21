@@ -15,28 +15,30 @@ import com.evtechsolution.gerenciador_tarefas.entities.User;
 
 @Service
 public class TokenService {
+
     @Value("${api.security.token.secret}")
     private String secret;
-    public String generateToken(User user){
+
+    public String generateToken(User user) {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
-
-            String token = JWT.create()
-                    .withIssuer("login-auth-api")
-                    .withSubject(user.getEmail())
-                    .withExpiresAt(this.generateExpirationDate())
+            return JWT.create()
+                    .withIssuer("tarefaRepository-api")
+                    .withSubject(user.getUsername())
+                    .withClaim("id", user.getId())
+                    .withClaim("role", user.getRole().name())
+                    .withExpiresAt(genExpirationDate())
                     .sign(algorithm);
-            return token;
-        } catch (JWTCreationException exception){
-            throw new RuntimeException("Error while authenticating");
+        } catch (JWTCreationException exception) {
+            throw new RuntimeException("Erro ao gerar token", exception);
         }
     }
 
-    public String validateToken(String token){
+    public String validateToken(String token) {
         try {
             Algorithm algorithm = Algorithm.HMAC256(secret);
             return JWT.require(algorithm)
-                    .withIssuer("login-auth-api")
+                    .withIssuer("tarefaRepository-api")
                     .build()
                     .verify(token)
                     .getSubject();
@@ -44,12 +46,8 @@ public class TokenService {
             return null;
         }
     }
-    
-    public String extractUsername(String token) {
-        return validateToken(token);
-    }
 
-    private Instant generateExpirationDate(){
+    private Instant genExpirationDate() {
         return LocalDateTime.now().plusHours(2).toInstant(ZoneOffset.of("-03:00"));
     }
 }

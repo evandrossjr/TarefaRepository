@@ -1,32 +1,38 @@
 package com.evtechsolution.gerenciador_tarefas;
 
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 
 import com.evtechsolution.gerenciador_tarefas.entities.User;
+import com.evtechsolution.gerenciador_tarefas.entities.enums.UserRole;
 import com.evtechsolution.gerenciador_tarefas.repositories.UserRepository;
 
-import jakarta.annotation.PostConstruct;
+@Component
+public class AdminSetup implements CommandLineRunner {
 
-@Configuration
-public class AdminSetup {
+    @Autowired
+    private UserRepository userRepository;
 
-    private final UserRepository userRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
-    public AdminSetup(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
-
-    @PostConstruct
-    public void setupAdminUser() {
+    @Override
+    public void run(String... args) throws Exception {
+        // Verifica se já existe um admin
         if (userRepository.findByEmail("admin@example.com") == null) {
             User admin = new User();
-            admin.setName("admin");
-            admin.setEmail("admin@admin.com");
-            admin.setPassword(new BCryptPasswordEncoder().encode("adminpassword"));
-            admin.setRole("ADMIN");
-
+            admin.setName("Administrador");
+            admin.setUsername("admin");
+            admin.setEmail("admin@example.com");
+            admin.setPassword(passwordEncoder.encode("admin123"));
+            
+            // Corrigindo esta linha - usando o enum UserRole.ADMIN em vez de String
+            admin.setRole(UserRole.ADMIN);
+            
             userRepository.save(admin);
+            System.out.println("Usuário admin criado com sucesso!");
         }
     }
 }
