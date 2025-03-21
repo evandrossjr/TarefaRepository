@@ -10,6 +10,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.Column;
@@ -41,7 +42,7 @@ public class User implements UserDetails {
 	private String password;
 	
 	@OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
-	private List<Tarefa> tarefasList = new ArrayList<>();
+    private List<Tarefa> tarefasList = new ArrayList<>();
 	
 	@NotBlank
 	@JsonProperty("role")
@@ -85,13 +86,15 @@ public class User implements UserDetails {
 		
 	}
 	
-	public User(Long id, String name, String email, String password, String role) {
+	public User(Long id, String name, String email, String password, String role,List<Tarefa> tarefasList ) {
 		super();
 		this.id = id;
 		this.name = name;
 		this.email = email;
 		this.password = password;
 		this.role = role;
+		this.tarefasList = tarefasList;
+		
 	}
 
 	public Long getId() {

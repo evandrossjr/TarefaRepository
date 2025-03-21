@@ -6,9 +6,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.evtechsolution.gerenciador_tarefas.entities.Tarefa;
+import com.evtechsolution.gerenciador_tarefas.entities.User;
 
 @Repository
 public interface TarefaRepository extends JpaRepository<Tarefa, Long>{
-	List<Tarefa> findByUserId(Long userId);
+	List<Tarefa> findByUser(User user);
 
 }

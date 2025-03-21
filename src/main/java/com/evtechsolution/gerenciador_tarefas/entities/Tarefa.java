@@ -4,9 +4,10 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 import com.evtechsolution.gerenciador_tarefas.entities.enums.Status;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -28,6 +29,7 @@ public class Tarefa {
 	
 	private String descricao;
 	
+	
 	private Status status;
 	
 	@NotNull
@@ -35,8 +37,8 @@ public class Tarefa {
 	
 	
 	@ManyToOne
-	@JoinColumn(name = "user_id", nullable = false)
-	private User user;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
 	public Tarefa() {
 		

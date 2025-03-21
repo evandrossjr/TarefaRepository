@@ -12,7 +12,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.evtechsolution.gerenciador_tarefas.entities.Tarefa;
 import com.evtechsolution.gerenciador_tarefas.entities.User;
 import com.evtechsolution.gerenciador_tarefas.exceptions.DatabaseException;
 import com.evtechsolution.gerenciador_tarefas.exceptions.ResourceNotFoundException;
@@ -24,26 +23,24 @@ import jakarta.persistence.EntityNotFoundException;
 
 @Service
 public class UserService {
-	
-	@Autowired
-	private UserRepository userRepository;
+    
+    @Autowired
+    private UserRepository userRepository;
 
-		
-	private static final Logger logger = LoggerFactory.getLogger(Tarefa.class);
-	
-	@Autowired
+    @Autowired
     private PasswordEncoder passwordEncoder;
+
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     public void salvarUsuario(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
     }
 
-    @Transactional(readOnly = true)
-	public List<User> findAll(){
-		return userRepository.findAll();
-	}
-	
+    public List<User> findAll() {
+        return userRepository.findAll();
+    }
+
     @Transactional(readOnly = true)
     public User findById(Long id, String username) throws AccessDeniedException {
         User user = userRepository.findById(id)
@@ -56,46 +53,27 @@ public class UserService {
 
         return user;
     }
-	
-    private boolean isAdmin(String email) {
-        Optional<User> user = userRepository.findByEmail(email);
-        return user != null && user.get().getRole().equals("ADMIN");
+
+    public void delete(Long id, String username) throws AccessDeniedException {
+        if (!userRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Usuário não encontrado com ID: " + id);
+        }
+
+        User user = userRepository.findById(id).orElseThrow();
+        if (!user.getUsername().equals(username) && !isAdmin(username)) {
+            throw new AccessDeniedException("Acesso negado.");
+        }
+
+        try {
+            userRepository.deleteById(id);
+            logger.info("Usuário com ID {} deletado com sucesso.", id);
+        } catch (DataIntegrityViolationException e) {
+            logger.error("Erro de integridade ao tentar deletar usuário com ID {}: {}", id, e.getMessage());
+            throw new DatabaseException(e.getMessage());
+        }
     }
 
-
-	public User insert(User obj) {
-		return userRepository.save(obj);
-	}
-	
-	//public boolean delete(Long id) {
-	//	if(tarefaRepository.existsById(id)) {
-	//		tarefaRepository.deleteById(id);
-	//		return true;
-	//	}
-	//	return false;
-	//}
-	
-	public void delete(Long id) {
-		if (!userRepository.existsById(id)) {
-			throw new ResourceNotFoundException("Usuário não encontrado com ID: " + id);
-		}
-		try {
-			userRepository.deleteById(id);
-		logger.info("Usuário com ID {} deletada com sucesso.", id);
-          
-		}
-		catch (DataIntegrityViolationException e){
-            logger.error("Erro de integridade ao tentar deletar usuário com ID {}: {}", id, e.getMessage());
-			throw new DatabaseException(e.getMessage());
-
-			
-		}
-	}
-
-
-
-	
-	@Transactional
+    @Transactional
     public User update(Long id, User obj, String username) throws AccessDeniedException {
         try {
             User entity = userRepository.getReferenceById(id);
@@ -110,11 +88,15 @@ public class UserService {
             throw new ResourceNotFoundException(id);
         }
     }
-	
-	private void updateData(User entity, User obj) {
+
+    private void updateData(User entity, User obj) {
         entity.setName(obj.getName());
         entity.setEmail(obj.getEmail());
         entity.setPassword(passwordEncoder.encode(obj.getPassword()));
     }
-	
+
+    public boolean isAdmin(String email) {
+        Optional<User> user = userRepository.findByEmail(email);
+        return user.isPresent() && "ADMIN".equals(user.get().getRole());
+    }
 }
