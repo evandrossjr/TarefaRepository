@@ -43,6 +43,14 @@ public class Tarefa {
         this.status = StatusTarefa.PENDENTE;
     }
     
+    public Tarefa(String titulo, String descricao, User user) {
+        this.titulo = titulo;
+        this.descricao = descricao;
+        this.dataCriacao = LocalDateTime.now();
+        this.status = StatusTarefa.PENDENTE;
+        this.user = user;
+    }
+    
     // Getters e Setters
     
     public Long getId() {
